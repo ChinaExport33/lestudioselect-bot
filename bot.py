@@ -19,10 +19,10 @@ POSTS_FILE = "posts_planifies.json"
 
 # GESTION JSON
 def load_posts():
-        if not os.path.exists(POSTS_FILE):
-                    return []
-                with open(POSTS_FILE, "r", encoding="utf-8") as f:
-                            return json.load(f)
+    if not os.path.exists(POSTS_FILE):
+        return []
+    with open(POSTS_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 def save_posts(posts):
         with open(POSTS_FILE, "w", encoding="utf-8") as f:
