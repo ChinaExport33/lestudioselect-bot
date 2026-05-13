@@ -1,5 +1,6 @@
-import logging, json, os
+import logging, json, os, threading
 from datetime import datetime
+from http.server import HTTPServer, BaseHTTPRequestHandler
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
 from telegram.ext import (
     Application, CommandHandler, MessageHandler, CallbackQueryHandler, ContextTypes, filters
@@ -262,6 +263,21 @@ async def community_post(app: Application):
     except Exception as e:
         log.error(f"Erreur post communaute : {e}")
 
+# SERVEUR HTTP MINIMAL (pour Render Web Service)
+class HealthHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"OK")
+    def log_message(self, format, *args):
+        pass
+
+def run_health_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(("0.0.0.0", port), HealthHandler)
+    log.info(f"Health server sur le port {port}")
+    server.serve_forever()
+
 # MAIN
 async def post_init(app: Application):
     scheduler = AsyncIOScheduler(timezone="Europe/Paris")
@@ -272,6 +288,10 @@ async def post_init(app: Application):
     log.info("Scheduler demarre.")
 
 def main():
+    # Lancer le serveur HTTP dans un thread separé
+    t = threading.Thread(target=run_health_server, daemon=True)
+    t.start()
+
     app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("catalogue", cmd_catalogue))
