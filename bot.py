@@ -263,8 +263,16 @@ async def community_post(app: Application):
         log.error(f"Erreur post communaute : {e}")
 
 # MAIN
+async def post_init(app: Application):
+    scheduler = AsyncIOScheduler(timezone="Europe/Paris")
+    scheduler.add_job(auto_post, "cron", hour="9,17,21", minute=0, args=[app])
+    scheduler.add_job(community_post, "cron", hour=12, minute=0, args=[app])
+    scheduler.add_job(check_and_publish, "cron", minute="*", args=[app])
+    scheduler.start()
+    log.info("Scheduler demarre.")
+
 def main():
-    app = Application.builder().token(BOT_TOKEN).build()
+    app = Application.builder().token(BOT_TOKEN).post_init(post_init).build()
     app.add_handler(CommandHandler("start", cmd_start))
     app.add_handler(CommandHandler("catalogue", cmd_catalogue))
     app.add_handler(CommandHandler("stats", cmd_stats))
@@ -273,11 +281,6 @@ def main():
     app.add_handler(CallbackQueryHandler(button_cb))
     app.add_handler(MessageHandler(filters.StatusUpdate.NEW_CHAT_MEMBERS, new_member))
     app.add_handler(MessageHandler(filters.PHOTO & filters.ChatType.PRIVATE, receive_photo))
-    scheduler = AsyncIOScheduler(timezone="Europe/Paris")
-    scheduler.add_job(auto_post, "cron", hour="9,17,21", minute=0, args=[app])
-    scheduler.add_job(community_post, "cron", hour=12, minute=0, args=[app])
-    scheduler.add_job(check_and_publish, "cron", minute="*", args=[app])
-    scheduler.start()
     log.info("Bot LeStudioSelect demarre.")
     app.run_polling()
 
